@@ -1501,12 +1501,13 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
     .video-actions { right: 6px; bottom: 120px; gap: 10px; }
     .action-icon { width: 34px; height: 34px; font-size: 1rem; }
     .action-count { font-size: 0.55rem; }
-    .video-info-overlay { padding: 60px 12px 14px; }
-    .video-user-row .comment-avatar { width: 30px; height: 30px; }
-    .video-user-row strong { font-size: 0.82rem; }
-    .video-caption { font-size: 0.75rem; margin-left: 40px; }
-    .video-title { font-size: 0.78rem; margin-left: 40px; }
-    .sound-indicator { font-size: 0.68rem; margin-left: 40px; }
+    .video-info-overlay { padding: 60px 12px 14px; width: 100%; box-sizing: border-box; }
+    .video-user-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .video-user-row .comment-avatar { width: 32px; height: 32px; flex-shrink: 0; }
+    .video-user-row strong { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .video-caption { font-size: 0.75rem; margin-left: 42px; }
+    .video-title { font-size: 0.78rem; margin-left: 42px; }
+    .sound-indicator { font-size: 0.68rem; margin-left: 42px; }
 }
 
 @media (max-width: 480px) {
