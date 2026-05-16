@@ -107,7 +107,7 @@
 
     feed.addEventListener('click', function(e) {
         var video = e.target.closest('.feed-video');
-        if (video) { if (video.paused) video.play(); else video.pause(); }
+        if (video) { if (video.paused) video.play().catch(function(){}); else video.pause(); }
     });
 
     function escapeXml(text) { if (!text) return ''; var d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
