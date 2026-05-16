@@ -1180,4 +1180,4 @@ if __name__ == '__main__':
                         password_hash=generate_password_hash('admin123'),
                         role='owner', verified=True, is_approved=True)
             db.session.add(owner); db.session.commit()
-    app.run(debug=True, host='127.0.0.1', port=3000)
+    app.run(debug=True, host='0.0.0.0', port=3000)
