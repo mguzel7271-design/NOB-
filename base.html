@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="{{ current_user.theme if current_user.is_authenticated else 'dark' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nobi - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="nav-logo">Nobi</a>
+            <div class="nav-search">
+                <form action="{{ url_for('search') }}" method="GET" style="display:flex;align-items:center;">
+                    <input type="text" name="q" placeholder="Ara..." class="search-input" id="searchInput" value="{{ request.args.get('q','') }}" oninput="searchLive(this.value)">
+                    <button type="submit" class="search-btn" id="searchSubmitBtn">🔍</button>
+                </form>
+                <div class="search-results" id="searchResults" style="display:none;"></div>
+            </div>
+            <button class="mobile-search-btn" onclick="toggleMobileSearch()" aria-label="Ara">🔍</button>
+            <div class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('index') }}" class="nav-link">Feed</a>
+                    <a href="{{ url_for('upload') }}" class="nav-link">Yükle</a>
+                    <a href="{{ url_for('studio') }}" class="nav-link">Studio</a>
+                    <a href="{{ url_for('messages') }}" class="nav-link">Mesaj</a>
+                    <a href="{{ url_for('groups') }}" class="nav-link">Gruplar</a>
+                    <div class="nav-link notif-bell" onclick="toggleNotifications()" style="position:relative;cursor:pointer;">
+                        🔔
+                        <span class="notif-badge" id="notifCount" style="display:none;">0</span>
+                    </div>
+                    <a href="{{ url_for('settings') }}" class="nav-link">⚙</a>
+                    <a href="{{ url_for('profile', username=current_user.username) }}" class="nav-link nav-profile">
+                        <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=current_user.profile_pic) }}" alt="" class="nav-avatar">
+                        {% if current_user.show_role and current_user.role != 'user' %}
+                        <span class="role-icon">{{ current_user.role_icon }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="nav-link">Çıkış</a>
+                    {% if current_user.role in ('owner','admin') %}
+                        <a href="{{ url_for('admin_dashboard') }}" class="nav-link admin-link">Admin</a>
+                    {% endif %}
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-link">Giriş</a>
+                    <a href="{{ url_for('register') }}" class="nav-link nav-register">Kayıt</a>
+                {% endif %}
+            </div>
+            <button class="nav-toggle" id="navToggle" onclick="document.querySelector('.nav-links').classList.toggle('active')">☰</button>
+        </div>
+    </nav>
+    <script>
+    document.querySelector('.nav-links')?.addEventListener('click', function(e) {
+        if (e.target.closest('.nav-link') && window.innerWidth <= 768) {
+            this.classList.remove('active');
+        }
+    });
+    </script>
+
+    <div class="notif-panel" id="notifPanel" style="display:none;">
+        <div class="notif-panel-header">
+            <h3>Bildirimler</h3>
+            <button onclick="readAllNotifs()">Tümünü Okundu İşaretle</button>
+        </div>
+        <div class="notif-list" id="notifList"></div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}"><span>{{ message }}</span><button onclick="this.parentElement.remove()">✕</button></div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="main-content{% block main_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    function toggleMobileSearch() {
+        var search = document.querySelector('.nav-search');
+        var input = document.getElementById('searchInput');
+        if (search.classList.contains('mobile-active')) {
+            search.classList.remove('mobile-active');
+        } else {
+            search.classList.add('mobile-active');
+            setTimeout(function(){ input.focus(); }, 100);
+        }
+    }
+    function searchLive(val) {
+        var el = document.getElementById('searchResults');
+        if (val.length < 2) { el.style.display = 'none'; return; }
+        fetch('/api/search?q=' + encodeURIComponent(val))
+        .then(function(r){return r.json()})
+        .then(function(data){
+            if (!data.users.length && !data.videos.length) { el.style.display = 'none'; return; }
+            el.innerHTML = '';
+            data.users.forEach(function(u){
+                var d = document.createElement('div');
+                d.className = 'search-result-item';
+                d.onclick = function(){ location.href='/profile/' + u.username; };
+                d.innerHTML = '<img src="/uploads/profile_pics/' + u.pic + '"><div><strong>' + u.name + '</strong><small>@' + u.username + '</small></div>';
+                el.appendChild(d);
+            });
+            data.videos.forEach(function(v){
+                var d = document.createElement('div');
+                d.className = 'search-result-item';
+                d.onclick = function(){ location.href='/video/' + v.id; };
+                d.innerHTML = '<div style="width:36px;height:36px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;">🎬</div><div><strong>' + v.title + '</strong><small>by ' + v.author + '</small></div>';
+                el.appendChild(d);
+            });
+            el.style.display = 'block';
+        });
+    }
+    document.addEventListener('click', function(e){
+        var el = document.getElementById('searchResults');
+        if (el && !e.target.closest('.nav-search')) el.style.display = 'none';
+    });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

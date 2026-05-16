@@ -1481,7 +1481,8 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
 @media (max-width: 768px) {
     .navbar { position: relative; }
     .main-content { padding-top: 0; }
-    .profile-container { height: calc(100dvh - 56px); overflow-y: auto; }
+    .main-content.profile-page { overflow-y: auto; height: auto; min-height: 100dvh; }
+    .profile-container { height: auto; overflow-y: visible; }
     .profile-info-section { flex-direction: column; align-items: center; text-align: center; padding: 10px 16px 8px; gap: 8px; }
     .profile-pic-large { width: 72px; height: 72px; }
     .profile-name-row h1 { font-size: 1.1rem; }
@@ -1498,16 +1499,16 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
     .story-avatar { width: 48px; height: 48px; }
     .story-name { max-width: 48px; }
     .video-card { height: 100dvh; }
-    .video-actions { right: 6px; bottom: 120px; gap: 10px; }
-    .action-icon { width: 34px; height: 34px; font-size: 1rem; }
-    .action-count { font-size: 0.55rem; }
-    .video-info-overlay { padding: 60px 12px 14px; width: 100%; box-sizing: border-box; }
-    .video-user-row { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .video-actions { right: 6px; bottom: 200px; gap: 6px; }
+    .action-icon { width: 30px; height: 30px; font-size: 0.9rem; }
+    .action-count { font-size: 0.5rem; }
+    .video-info-overlay { padding: 80px 12px 20px; width: 100%; box-sizing: border-box; }
+    .video-user-row { display: flex; align-items: center; gap: 8px; width: 100%; }
     .video-user-row .comment-avatar { width: 32px; height: 32px; flex-shrink: 0; }
     .video-user-row strong { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .video-caption { font-size: 0.75rem; margin-left: 42px; }
-    .video-title { font-size: 0.78rem; margin-left: 42px; }
-    .sound-indicator { font-size: 0.68rem; margin-left: 42px; }
+    .video-caption { font-size: 0.75rem; margin-left: 40px; }
+    .video-title { font-size: 0.78rem; margin-left: 40px; }
+    .sound-indicator { font-size: 0.68rem; margin-left: 40px; }
 }
 
 @media (max-width: 480px) {
