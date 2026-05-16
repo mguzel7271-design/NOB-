@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin - Gruplar{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h2>Gruplar</h2>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr><th>ID</th><th>Grup Adı</th><th>Oluşturan</th><th>Üye</th><th>Tarih</th><th>İşlem</th></tr>
+            </thead>
+            <tbody>
+                {% for g in groups %}
+                <tr>
+                    <td>{{ g.id }}</td>
+                    <td><strong>{{ g.name }}</strong></td>
+                    <td>{{ g.members.first().user.nickname if g.members.first() else '—' }}</td>
+                    <td>{{ g.members.count() }}</td>
+                    <td>{{ g.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        <button class="btn-sm btn-danger" onclick="deleteGroup({{ g.id }})">Grubu Sil</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not groups %}
+                <tr><td colspan="6" style="text-align:center;color:var(--text2);padding:30px;">Hiç grup yok.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteGroup(groupId) {
+    if (!confirm('Bu grubu silmek istediğinize emin misiniz?')) return;
+    fetch('/admin/delete_group/' + groupId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() { location.reload(); });
+}
+</script>
+{% endblock %}

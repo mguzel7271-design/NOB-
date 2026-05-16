@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Video{% endblock %}
+{% block content %}
+<div class="video-feed-container" style="height:100vh;">
+    <div class="video-card" style="height:100vh;">
+        <video src="{{ url_for('uploaded_file', subdir='videos', filename=video.file_path) }}"
+               controls autoplay loop class="feed-video"></video>
+        <div class="video-info-overlay">
+            <div class="video-user-row">
+                <a href="{{ url_for('profile', username=video.author.username) }}">
+                    <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=video.author.profile_pic) }}" alt="" class="comment-avatar">
+                </a>
+                <a href="{{ url_for('profile', username=video.author.username) }}">
+                    <strong>{{ video.author.nickname }}</strong>
+                </a>
+                {% if video.author.verified %}
+                <span class="verified-badge">✓</span>
+                {% endif %}
+                {% if video.author.role != 'user' %}
+                <span class="role-badge" style="background:{{ video.author.role_badge }}">{{ video.author.role_label }}</span>
+                {% endif %}
+            </div>
+            {% if video.title %}<strong class="video-title">{{ video.title }}</strong>{% endif %}
+            <span class="video-caption">{{ video.caption }}</span>
+        </div>
+        <div class="video-actions">
+            <button class="action-btn like-btn" onclick="toggleLike({{ video.id }}, this)">
+                <span class="action-icon">♡</span>
+                <span class="action-count">{{ video.likes_count() }}</span>
+            </button>
+            <button class="action-btn" onclick="openComments({{ video.id }})">
+                <span class="action-icon">💬</span>
+                <span class="action-count">{{ video.comments_count() }}</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleLike(videoId, btn) {
+    fetch('/api/video/' + videoId + '/like', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        btn.innerHTML = '<span class="action-icon">' + (d.liked ? '♥' : '♡') + '</span><span class="action-count">' + d.count + '</span>';
+        if (d.liked) btn.classList.add('liked'); else btn.classList.remove('liked');
+    });
+}
+function openComments(videoId) {
+    var modal = document.getElementById('commentsModal');
+    if (!modal) {
+        var div = document.createElement('div');
+        div.className = 'modal-overlay active'; div.id = 'commentsModal';
+        div.onclick = function(e) { if (e.target === this) this.remove(); };
+        div.innerHTML = '<div class="modal-content"><div class="modal-header"><h3>Yorumlar</h3><button onclick="this.closest(\'.modal-overlay\').remove()">✕</button></div><div class="comments-list" id="commentsList2"></div><div class="comment-input"><input type="text" id="commentText2" placeholder="Yorum ekle..."><button onclick="submitComment2()">Gönder</button></div></div>';
+        document.body.appendChild(div);
+    } else { modal.classList.add('active'); }
+    var list = document.getElementById('commentsList') || document.getElementById('commentsList2');
+    list.innerHTML = '<div class="loading">Yükleniyor...</div>';
+    fetch('/api/video/{{ video.id }}/comments')
+    .then(function(r) { return r.json(); })
+    .then(function(comments) {
+        if (!comments.length) { list.innerHTML = '<div class="loading">Henüz yorum yok.</div>'; return; }
+        list.innerHTML = comments.map(function(c) {
+            var roleBadge = (c.author_role && c.author_role !== 'user') ? '<span class="role-badge-xs" style="background:' + ({owner:'#ffd700',admin:'#fe2c55',moderator:'#20d5ec'}[c.author_role]||'#888') + '">' + ({owner:'Owner',admin:'Admin',moderator:'Mod'}[c.author_role]||'') + '</span>' : '';
+            return '<div class="comment-item"><img src="/uploads/profile_pics/' + c.author_pic + '" class="comment-avatar"><div class="comment-body"><span class="comment-author">' + c.author + '</span>' + (c.author_verified ? ' <span class="verified-badge">✓</span>' : '') + roleBadge + '<p>' + c.content + '</p></div></div>';
+        }).join('');
+    });
+}
+</script>
+{% endblock %}

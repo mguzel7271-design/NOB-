@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hesap Silinmiş - Nobi</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 20px; }
+        .container { max-width: 420px; }
+        .icon { font-size: 4rem; margin-bottom: 16px; }
+        h1 { font-size: 1.5rem; margin-bottom: 8px; color: #fe2c55; }
+        p { color: #888; font-size: 0.9rem; margin-bottom: 6px; line-height: 1.5; }
+        .btn { display: inline-block; padding: 12px 28px; background: #fe2c55; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 20px; border: none; cursor: pointer; font-size: 0.9rem; }
+        .btn:hover { background: #d9264a; }
+        .info { background: #111; border: 1px solid #222; border-radius: 8px; padding: 16px; margin: 16px 0; text-align: left; }
+        .info-label { color: #666; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-value { color: #fff; font-size: 0.85rem; margin-top: 2px; margin-bottom: 10px; }
+        .info-value:last-child { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🗑️</div>
+        <h1>Hesabınız Silinmiş</h1>
+        <p>Hesabınız topluluk kurallarını ihlal ettiği için platformdan kaldırılmıştır.</p>
+        <div class="info">
+            {% if reason %}
+            <div class="info-label">Silinme Sebebi</div>
+            <div class="info-value">{{ reason }}</div>
+            {% endif %}
+            {% if date %}
+            <div class="info-label">Silinme Tarihi</div>
+            <div class="info-value">{{ date }}</div>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('login') }}" class="btn">← Giriş Ekranına Dön</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ query }} - Ara{% endblock %}
+{% block content %}
+<div class="search-page">
+    <div class="search-page-header">
+        <h2>"{{ query }}" için sonuçlar</h2>
+    </div>
+
+    {% if users %}
+    <div class="search-section">
+        <h3>Kullanıcılar</h3>
+        <div class="search-users">
+            {% for u in users %}
+            <a href="{{ url_for('profile', username=u.username) }}" class="search-user-item">
+                <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=u.profile_pic) }}" alt="">
+                <div>
+                    <strong>{{ u.nickname }}</strong>
+                    {% if u.verified and u.show_verified %}<span class="verified-badge">✓</span>{% endif %}
+                    {% if u.show_role and u.role != 'user' %}<span class="role-badge-xs" style="background:{{ u.role_badge }}">{{ u.role_icon }}</span>{% endif %}
+                    <small>@{{ u.username }}</small>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="search-section">
+        <h3>Videolar</h3>
+        {% if videos %}
+        <div class="search-videos">
+            {% for v in videos %}
+            <div class="profile-video-card" onclick="location.href='/video/{{ v.id }}'">
+                <video src="{{ url_for('uploaded_file', subdir='videos', filename=v.file_path) }}" muted
+                       onmouseover="var p=this.play();if(p)p.catch(function(){});" onmouseout="this.pause();this.currentTime=0;"></video>
+                <div class="profile-video-overlay">
+                    <span>♥ {{ v.likes_count() }}</span>
+                    <span>💬 {{ v.comments_count() }}</span>
+                </div>
+                {% if v.title %}<div class="profile-video-title">{{ v.title }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="empty-state">"{{ query }}" ile eşleşen video bulunamadı.</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.search-page {
+    max-width: 900px; margin: 0 auto; padding: 20px 16px;
+    height: calc(100vh - var(--nav-height)); overflow-y: auto;
+}
+.search-page::-webkit-scrollbar { display: none; }
+.search-page-header h2 { font-size: 1.1rem; margin-bottom: 20px; font-weight: 600; }
+.search-section { margin-bottom: 24px; }
+.search-section h3 { font-size: 0.9rem; color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.search-users { display: flex; flex-direction: column; gap: 8px; }
+.search-user-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+.search-user-item:hover { background: var(--card-hover); opacity: 1; }
+.search-user-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.search-user-item strong { font-size: 0.9rem; }
+.search-user-item small { display: block; font-size: 0.75rem; color: var(--text2); }
+.search-videos {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+@media (max-width: 768px) { .search-videos { grid-template-columns: repeat(2, 1fr); } }
+</style>
+{% endblock %}

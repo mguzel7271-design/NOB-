@@ -1,0 +1,499 @@
+/* ==========================================================================
+   1. GENEL PANEL DÜZENİ (DESKTOP)
+   ========================================================================== */
+.admin-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    height: calc(100vh - var(--nav-height));
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+.admin-container::-webkit-scrollbar { 
+    display: none; 
+}
+
+.admin-container h2 { 
+    margin-bottom: 20px; 
+    font-size: 1.2rem; 
+}
+
+.back-link { 
+    color: var(--accent); 
+    font-size: 0.85rem; 
+    display: inline-block; 
+    margin-bottom: 16px; 
+    text-decoration: none;
+}
+.back-link:hover { 
+    text-decoration: underline; 
+}
+
+/* ==========================================================================
+   2. ANLIK DUYURU SİSTEMİ (DESKTOP)
+   ========================================================================== */
+.admin-announcement {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(243, 156, 18, 0.1);
+    border: 1px solid var(--border);
+    border-left: 4px solid #f39c12;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    gap: 16px;
+    box-sizing: border-box;
+}
+
+.admin-announcement-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0; /* Metnin taşmasını engeller */
+}
+
+.admin-announcement-badge {
+    background: #f39c12;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.admin-announcement-text {
+    font-size: 0.9rem;
+    color: var(--text);
+    line-height: 1.4;
+    margin: 0;
+    word-break: break-word; /* Uzun kelimeleri böler */
+}
+
+.admin-announcement-close {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    font-size: 1.3rem;
+    line-height: 1;
+    transition: color 0.2s;
+    padding: 4px;
+    flex-shrink: 0;
+}
+.admin-announcement-close:hover {
+    color: var(--danger, #e74c3c);
+}
+
+/* ==========================================================================
+   3. ÜST BAR VE FİLTRELER
+   ========================================================================== */
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-filter { 
+    display: flex; 
+    gap: 8px; 
+    flex-wrap: wrap; 
+}
+
+.filter-link {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    transition: all 0.2s;
+    text-decoration: none;
+}
+.filter-link:hover { 
+    border-color: var(--accent); 
+    color: var(--accent); 
+}
+.filter-link.active { 
+    background: var(--accent); 
+    color: #fff; 
+    border-color: var(--accent); 
+}
+
+/* ==========================================================================
+   4. İSTATİSTİK KARTLARI & NAVİGASYON
+   ========================================================================== */
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 10px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.stat-number { 
+    display: block; 
+    font-size: 1.8rem; 
+    font-weight: 700; 
+    color: var(--accent); 
+}
+.stat-label { 
+    display: block; 
+    color: var(--text2); 
+    font-size: 0.8rem; 
+    margin-top: 4px; 
+}
+
+.admin-nav {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.admin-nav-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+    color: var(--text);
+    text-decoration: none;
+    box-sizing: border-box;
+}
+.admin-nav-card:hover { 
+    background: var(--card-hover); 
+    transform: translateY(-2px); 
+}
+
+/* ==========================================================================
+   5. TABLO YAPISI
+   ========================================================================== */
+.admin-table-container { 
+    width: 100%;
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 24px;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    overflow: hidden;
+}
+
+.admin-table th {
+    background: var(--bg2);
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--text2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.admin-table tr:last-child td { 
+    border-bottom: none; 
+}
+.admin-table tr:hover td { 
+    background: var(--card-hover); 
+}
+.admin-table .row-banned td { 
+    opacity: 0.5; 
+}
+
+.user-link { 
+    color: var(--accent); 
+    font-weight: 600; 
+    text-decoration: none;
+}
+.user-link:hover { 
+    text-decoration: underline; 
+}
+
+.status-cell { 
+    text-align: center; 
+}
+.actions-cell { 
+    display: flex; 
+    gap: 6px; 
+    flex-wrap: wrap; 
+}
+
+/* ==========================================================================
+   6. BUTONLAR VE ROLLER
+   ========================================================================== */
+.btn-sm {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+.btn-sm:hover { 
+    background: var(--card-hover); 
+}
+
+.btn-approve { border-color: var(--accent); color: var(--accent); }
+.btn-verify { border-color: var(--verified, #20d5ec); color: var(--verified, #20d5ec); }
+.btn-ban { border-color: var(--danger, #e74c3c); color: var(--danger, #e74c3c); }
+.btn-unban { border-color: #2ecc71; color: #2ecc71; }
+.btn-danger { border-color: var(--danger, #e74c3c); color: var(--danger, #e74c3c); }
+.btn-kick { border-color: #f39c12; color: #f39c12; }
+.btn-warn { border-color: #e67e22; color: #e67e22; }
+
+/* ==========================================================================
+   7. KULLANICI DETAY DETAYLARI
+   ========================================================================== */
+.user-detail-header {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.detail-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.user-detail-header h2 { margin-bottom: 0; }
+.user-detail-header h2 small { color: var(--text2); font-weight: 400; font-size: 0.85rem; }
+.user-detail-header p { font-size: 0.85rem; color: var(--text2); margin: 4px 0 0 0; }
+
+.detail-status {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.status-badge.approved { border-color: var(--accent); color: var(--accent); }
+.status-badge.pending { border-color: #f39c12; color: #f39c12; }
+.status-badge.verified { border-color: var(--verified, #20d5ec); color: var(--verified, #20d5ec); }
+.status-badge.banned { border-color: var(--danger, #e74c3c); color: var(--danger, #e74c3c); }
+
+/* Veritabanı İstatistikleri */
+.db-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+.db-stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text2);
+    box-sizing: border-box;
+}
+.db-num {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+/* ==========================================================================
+   8. %100 GERÇEK MOBİL UYUMLULUK KATMANI (RESPONSIVE)
+   ========================================================================== */
+.admin-announce {
+    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(254,44,85,0.05));
+    border: 1px solid rgba(255,215,0,0.3);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 20px;
+}
+.admin-announce .form-input { background: var(--bg); border-color: var(--border); }
+
+@media (max-width: 768px) {
+    .admin-container { 
+        padding: 12px; 
+        height: calc(100vh - var(--nav-height)); 
+    }
+    
+    /* 1. Duyuru Paneli Mobil Revizesi */
+    .admin-announcement {
+        flex-direction: row; 
+        align-items: flex-start;
+        padding: 12px;
+        gap: 10px;
+        position: relative;
+    }
+    
+    .admin-announcement-content {
+        flex-direction: column; 
+        align-items: flex-start;
+        gap: 6px;
+        padding-right: 20px; /* Çarpı butonunun üzerine binmesin */
+    }
+
+    .admin-announcement-text {
+        font-size: 0.85rem;
+    }
+
+    .admin-announcement-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+    /* 2. Header ve Filtre Kaydırma Desteği */
+    .admin-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 12px;
+    }
+    
+    .admin-filter { 
+        width: 100%; 
+        overflow-x: auto; 
+        display: flex;
+        flex-wrap: nowrap; /* Mobilde yan yana kaysın, kırılmasın */
+        padding-bottom: 6px;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .admin-filter .filter-link { 
+        flex-shrink: 0; 
+        padding: 6px 12px;
+    }
+
+    /* 3. İstatistik Gridleri Çift Kolon */
+    .admin-stats { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 8px; 
+    }
+    .admin-stats .stat-card { 
+        padding: 14px 8px; 
+    }
+    .admin-stats .stat-number { 
+        font-size: 1.4rem; 
+    }
+
+    /* 4. Navigasyon Kartları Alt Alta */
+    .admin-nav { 
+        grid-template-columns: 1fr; 
+        gap: 8px; 
+    }
+    .admin-nav .admin-nav-card { 
+        padding: 20px; 
+        font-size: 0.95rem; 
+    }
+
+    /* 5. Kullanıcı Detay Kartı */
+    .user-detail-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 14px;
+        position: relative;
+    }
+
+    .detail-status {
+        margin-left: 0;
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .status-badge {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* 6. Tablo İçi Butonların Düzeni */
+    .actions-cell { 
+        flex-direction: column; 
+        gap: 6px; 
+        width: 100%;
+    }
+    .actions-cell .btn-sm { 
+        width: 100%; 
+        text-align: center; 
+        padding: 8px; /* Mobilde dokunma kolaylığı için büyütüldü */
+    }
+
+    /* 7. Alt Bilgi İstatistikleri */
+    .db-stats { 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 6px; 
+    }
+    .db-stat { 
+        padding: 10px; 
+    }
+    .db-num { 
+        font-size: 1.1rem; 
+    }
+
+    /* 8. Admin Formları Genişlik Sabitleme */
+    .admin-actions { 
+        margin-top: 16px !important; 
+        width: 100%;
+    }
+    .admin-actions h3 { 
+        font-size: 0.95rem; 
+    }
+    .admin-actions .form-input,
+    .admin-actions .btn-primary,
+    .admin-actions form { 
+        width: 100%; 
+        box-sizing: border-box; 
+    }
+    .admin-actions .btn-primary {
+        margin-top: 8px;
+    }
+}

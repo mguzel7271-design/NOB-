@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Kullanıcı Detay - {{ user.username }}{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <a href="{{ url_for('admin_users') }}" class="back-link">← Kullanıcılara Dön</a>
+    <div class="user-detail-header">
+        <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=user.profile_pic) }}" alt="" class="detail-avatar">
+        <div>
+            <h2>{{ user.nickname }} <small>@{{ user.username }}</small></h2>
+            <p>E-posta: {{ user.email }}</p>
+            <p>IP: {{ user.ip_address or '—' }}</p>
+            <p>Kayıt: {{ user.created_at.strftime('%d %B %Y') }}</p>
+            <p>Son görülme: {{ user.last_seen.strftime('%d %B %Y %H:%M') if user.last_seen else '—' }}</p>
+            <p>Doğum: {{ user.birth_date.strftime('%d %B %Y') if user.birth_date else 'Belirtilmemiş' }}</p>
+            <p>Biyografi: {{ user.bio if user.bio else '—' }}</p>
+            {% if user.is_banned %}<p>Ban sebebi: {{ user.ban_reason }}</p>{% endif %}
+        </div>
+        <div class="detail-status">
+            <span class="status-badge {{ 'approved' if user.is_approved else 'pending' }}">{{ 'Onaylı' if user.is_approved else 'Onaysız' }}</span>
+            <span class="status-badge {{ 'verified' if user.verified else '' }}">{{ 'Doğrulanmış' if user.verified else 'Doğrulanmamış' }}</span>
+            {% if user.role != 'user' %}<span class="status-badge" style="background:{{ user.role_badge }};color:#fff;">{{ user.role_label }}</span>{% endif %}
+            {% if user.is_banned %}<span class="status-badge banned">Banlı</span>{% endif %}
+            {% if user.private %}<span class="status-badge">Gizli Hesap</span>{% endif %}
+        </div>
+    </div>
+
+    {% if warnings %}
+    <h3 style="margin:20px 0 10px;">Uyarılar ({{ warnings|length }})</h3>
+    <div class="admin-table-container" style="margin-bottom:20px;">
+        <table class="admin-table">
+            <thead><tr><th>Tarih</th><th>Admin</th><th>Sebep</th></tr></thead>
+            <tbody>
+                {% for w in warnings %}
+                <tr><td>{{ w.created_at.strftime('%Y-%m-%d %H:%M') }}</td><td>@{{ w.admin.username }}</td><td>{{ w.reason }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <h3 style="margin:20px 0 10px;">Videolar ({{ videos|length }})</h3>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead><tr><th>ID</th><th>Başlık</th><th>Açıklama</th><th>Beğeni</th><th>Yorum</th><th>Görüntülenme</th><th>Tarih</th><th>İşlem</th></tr></thead>
+            <tbody>
+                {% for video in videos %}
+                <tr>
+                    <td>{{ video.id }}</td>
+                    <td>{{ video.title[:30] if video.title else '—' }}</td>
+                    <td>{{ video.caption[:40] }}{% if video.caption|length > 40 %}...{% endif %}</td>
+                    <td>{{ video.likes_count() }}</td>
+                    <td>{{ video.comments_count() }}</td>
+                    <td>{{ video.views }}</td>
+                    <td>{{ video.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td><button class="btn-sm btn-danger" onclick="deleteVideo({{ video.id }})">Sil</button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function deleteVideo(videoId) { if (!confirm('Videoyu sil?')) return; fetch('/admin/delete_video/' + videoId, {method:'POST'}).then(function(r){return r.json()}).then(function(){location.reload()}); }
+</script>
+{% endblock %}

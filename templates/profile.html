@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ profile_user.nickname }}{% endblock %}
+{% block content %}
+<div class="profile-container">
+    <div class="profile-info-section" style="margin-top:20px;">
+        <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=profile_user.profile_pic) }}" alt="" class="profile-pic-large">
+        <div class="profile-details">
+            <div class="profile-name-row">
+                <h1>{{ profile_user.nickname }}</h1>
+                {% if profile_user.verified and profile_user.show_verified %}
+                <span class="verified-badge-lg">✓</span>
+                {% endif %}
+                {% if profile_user.show_role and profile_user.role != 'user' %}
+                <span class="role-badge-lg" style="background:{{ profile_user.role_badge }}">{{ profile_user.role_icon }} {{ profile_user.role_label }}</span>
+                {% endif %}
+            </div>
+            <p class="profile-username">@{{ profile_user.username }}</p>
+            {% if profile_user.bio %}
+            <p class="profile-bio">{{ profile_user.bio }}</p>
+            {% endif %}
+            <div class="profile-stats">
+                <span><strong>{{ profile_user.videos.count() }}</strong> Video</span>
+                <span><strong>{{ profile_user.followers_count() }}</strong> Takipçi</span>
+                <span><strong>{{ profile_user.following_count() }}</strong> Takip</span>
+            </div>
+            {% if current_user.is_authenticated and current_user != profile_user %}
+                <button class="btn-primary follow-btn" onclick="toggleFollow({{ profile_user.id }}, this)" data-following="{{ 'true' if is_following else 'false' }}">
+                    {{ 'Takipten Çık' if is_following else 'Takip Et' }}
+                </button>
+            {% endif %}
+            {% if current_user.is_authenticated and current_user != profile_user %}
+                <button class="btn-secondary" onclick="reportUser({{ profile_user.id }})" style="margin-left:8px;">🚩 Bildir</button>
+            {% endif %}
+            {% if current_user == profile_user %}
+                <a href="{{ url_for('settings') }}" class="btn-secondary">Profili Düzenle</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ABOUT / HAKKINDA -->
+    <div class="profile-about">
+        <h3>Hakkında</h3>
+        <div class="about-grid">
+            {% if profile_user.show_role and profile_user.role != 'user' %}
+            <div class="about-item">
+                <span class="about-label">Rol</span>
+                <span class="about-value">
+                    {% if profile_user.role == 'owner' %}
+                        <span class="role-badge-lg" style="background:{{ profile_user.role_badge }}">👑 Owner</span> Platform Sahibi
+                    {% elif profile_user.role == 'admin' %}
+                        <span class="role-badge-lg" style="background:{{ profile_user.role_badge }}">🛡️ Admin</span> Yönetici
+                    {% elif profile_user.role == 'moderator' %}
+                        <span class="role-badge-lg" style="background:{{ profile_user.role_badge }}">⚔️ Mod</span> Moderatör
+                    {% endif %}
+                </span>
+            </div>
+            {% endif %}
+            <div class="about-item">
+                <span class="about-label">Katılma Tarihi</span>
+                <span class="about-value">{{ profile_user.created_at.strftime('%d %B %Y') }}</span>
+            </div>
+            {% if profile_user.verified and profile_user.show_verified %}
+            <div class="about-item">
+                <span class="about-label">Doğrulama</span>
+                <span class="about-value"><span class="verified-badge-lg">✓</span> Doğrulanmış Hesap</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="profile-tabs">
+        <button class="tab-btn active" onclick="switchTab('videos',this)">Videolar</button>
+        {% if current_user == profile_user %}
+        <button class="tab-btn" onclick="switchTab('bookmarks',this)">Kaydedilenler</button>
+        {% endif %}
+    </div>
+
+    <div class="profile-videos" id="videosTab">
+        {% if videos %}
+            {% for video in videos %}
+            <div class="profile-video-card" onclick="location.href='/video/{{ video.id }}'" style="cursor:pointer;">
+                <video src="{{ url_for('uploaded_file', subdir='videos', filename=video.file_path) }}" muted
+                       onmouseover="var pp=this.play();if(pp)pp.catch(function(){});" onmouseout="this.pause();this.currentTime=0;"></video>
+                <div class="profile-video-overlay">
+                    <span>♥ {{ video.likes_count() }}</span>
+                    <span>💬 {{ video.comments_count() }}</span>
+                </div>
+                {% if video.title %}<div class="profile-video-title">{{ video.title }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-state">Henüz video yok.</p>
+        {% endif %}
+    </div>
+
+    {% if current_user == profile_user %}
+    <div class="profile-videos" id="bookmarksTab" style="display:none">
+        {% set bookmarks = current_user.bookmarks.all() %}
+        {% if bookmarks %}
+            {% for bm in bookmarks %}
+            <div class="profile-video-card" onclick="location.href='/video/{{ bm.video.id }}'" style="cursor:pointer;">
+                <video src="{{ url_for('uploaded_file', subdir='videos', filename=bm.video.file_path) }}" muted
+                       onmouseover="var pp=this.play();if(pp)pp.catch(function(){});" onmouseout="this.pause();this.currentTime=0;"></video>
+                <div class="profile-video-overlay">
+                    <span>♥ {{ bm.video.likes_count() }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-state">Kaydedilen video yok.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleFollow(userId, btn) {
+    fetch('/follow/' + userId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        btn.textContent = d.following ? 'Takipten Çık' : 'Takip Et';
+        btn.dataset.following = d.following;
+    });
+}
+function reportUser(userId) {
+    var reason = prompt('Bu kullanıcıyı neden şikayet ediyorsunuz?');
+    if (!reason) return;
+    fetch('/api/report_user', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id: userId, reason: reason})})
+    .then(function(r){return r.json()})
+    .then(function(d){ alert(d.success ? 'Şikayetiniz gönderildi.' : d.error); });
+}
+function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-btn').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('videosTab').style.display = tab === 'videos' ? 'grid' : 'none';
+    var b = document.getElementById('bookmarksTab');
+    if (b) b.style.display = tab === 'bookmarks' ? 'grid' : 'none';
+}
+</script>
+{% endblock %}

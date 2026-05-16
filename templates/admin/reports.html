@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Admin - Şikayetler{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h2>Şikayetler</h2>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Bildiren</th>
+                    <th>Tür</th>
+                    <th>İçerik ID</th>
+                    <th>Sebep</th>
+                    <th>Tarih</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin_user_detail', user_id=report.reporter.id) }}" class="user-link">{{ report.reporter.nickname }}</a>
+                    </td>
+                    <td>{{ report.content_type }}</td>
+                    <td>{{ report.content_id }}</td>
+                    <td>{{ report.reason[:60] }}</td>
+                    <td>{{ report.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ '✅ Çözüldü' if report.resolved else '⏳ Bekliyor' }}</td>
+                    <td>
+                        {% if not report.resolved %}
+                        <button class="btn-sm" onclick="resolveReport({{ report.id }})">Çözüldü</button>
+                        <button class="btn-sm btn-danger" onclick="deleteReportContent({{ report.content_id }}, '{{ report.content_type }}')">İçeriği Sil</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not reports %}
+                <tr><td colspan="8" style="text-align:center;color:var(--text2);padding:30px;">Hiç şikayet yok.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function resolveReport(reportId) {
+    fetch('/admin/resolve_report/' + reportId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() { location.reload(); });
+}
+
+function deleteReportContent(contentId, type) {
+    if (!confirm('Bu içeriği silmek istediğinize emin misiniz?')) return;
+    if (type === 'video') {
+        fetch('/admin/delete_video/' + contentId, { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function() { location.reload(); });
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+{% block title %}Nobi{% endblock %}
+
+{% block content %}
+{% if current_user.is_authenticated %}
+<div class="story-bar" id="storyBar">
+    <div class="story-item" onclick="document.getElementById('storyUpload').click()">
+        <div class="story-avatar add-story">+</div>
+        <span class="story-name">Story</span>
+    </div>
+    {% for s in story_users %}
+    <div class="story-item" onclick="openStoryViewer({{ s.user_id }})">
+        <div class="story-avatar">
+            <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=s.author.profile_pic) }}" alt="">
+        </div>
+        <span class="story-name">{{ s.author.nickname }}</span>
+    </div>
+    {% endfor %}
+</div>
+<form method="post" action="{{ url_for('upload_story') }}" enctype="multipart/form-data" style="display:none">
+    <input type="file" id="storyUpload" name="file" accept="image/*" onchange="this.form.submit()">
+</form>
+{% endif %}
+
+<div class="video-feed-container" id="videoFeed">
+    {% for video in videos.items %}
+    <div class="video-card" data-video-id="{{ video.id }}">
+        <video src="{{ url_for('uploaded_file', subdir='videos', filename=video.file_path) }}"
+               loop muted playsinline preload="auto" class="feed-video"></video>
+        <div class="video-info-overlay">
+            <div class="video-user-row">
+                <a href="{{ url_for('profile', username=video.author.username) }}">
+                    <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=video.author.profile_pic) }}" alt="" class="comment-avatar">
+                </a>
+                <a href="{{ url_for('profile', username=video.author.username) }}">
+                    <strong>{{ video.author.nickname }}</strong>
+                </a>
+                {% if video.author.verified and video.author.show_verified %}
+                <span class="verified-badge">✓</span>
+                {% endif %}
+                {% if video.author.show_role and video.author.role != 'user' %}
+                <span class="role-badge" style="background:{{ video.author.role_badge }}">{{ video.author.role_icon }} {{ video.author.role_label }}</span>
+                {% endif %}
+            </div>
+            {% if video.title %}<strong class="video-title">{{ video.title }}</strong>{% endif %}
+            <span class="video-caption">{{ video.caption }}</span>
+            <div class="sound-indicator">♪ {{ video.author.nickname }}</div>
+        </div>
+        <div class="video-actions">
+            <button class="action-btn like-btn" onclick="toggleLike({{ video.id }}, this)">
+                <span class="action-icon">♡</span>
+                <span class="action-count">{{ video.likes_count() }}</span>
+            </button>
+            <button class="action-btn" onclick="openComments({{ video.id }})">
+                <span class="action-icon">💬</span>
+                <span class="action-count">{{ video.comments_count() }}</span>
+            </button>
+            <button class="action-btn bookmark-btn" onclick="toggleBookmark({{ video.id }}, this)">
+                <span class="action-icon">🔖</span>
+            </button>
+            <button class="action-btn" onclick="openReport({{ video.id }}, 'video')">
+                <span class="action-icon">⚑</span>
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="loading-spinner" id="loadingSpinner">Yükleniyor...</div>
+
+<div class="modal-overlay" id="commentsModal" onclick="closeModal(event)">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Yorumlar</h3>
+            <button onclick="closeModalById('commentsModal')">✕</button>
+        </div>
+        <div class="comments-list" id="commentsList"></div>
+        <div class="comment-input">
+            <div class="input-row">
+                <input type="text" id="commentText" placeholder="Yorum ekle..." maxlength="500">
+                <button onclick="submitComment()">Gönder</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="reportModal" onclick="closeModal(event)">
+    <div class="modal-content modal-sm">
+        <div class="modal-header"><h3>Şikayet Et</h3><button onclick="closeModalById('reportModal')">✕</button></div>
+        <textarea id="reportReason" placeholder="Şikayet sebebiniz?" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px;margin:10px 0;resize:none;"></textarea>
+        <button class="btn-primary btn-full" onclick="submitReport()">Gönder</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="storyViewer" onclick="closeModal(event)">
+    <div class="story-viewer-content" id="storyViewerContent"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/video-scroll.js') }}"></script>
+<script>
+var currentVideoId = null;
+var currentReportType = null;
+
+function toggleLike(videoId, btn) {
+    fetch('/api/video/' + videoId + '/like', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        btn.innerHTML = '<span class="action-icon">' + (d.liked ? '♥' : '♡') + '</span><span class="action-count">' + d.count + '</span>';
+        if (d.liked) btn.classList.add('liked'); else btn.classList.remove('liked');
+    });
+}
+
+function toggleBookmark(videoId, btn) {
+    fetch('/api/video/' + videoId + '/bookmark', { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { btn.classList.toggle('bookmarked', d.bookmarked); });
+}
+
+var currentCommentsVideoOwner = null;
+var replyToId = null;
+
+function openComments(videoId) {
+    currentVideoId = videoId;
+    replyToId = null;
+    showModal('commentsModal');
+    var list = document.getElementById('commentsList');
+    list.innerHTML = '<div class="loading">Yükleniyor...</div>';
+    fetch('/api/video/' + videoId + '/comments')
+    .then(function(r) { return r.json(); })
+    .then(function(comments) {
+        currentCommentsVideoOwner = comments.length > 0 ? comments[0].is_video_owner : false;
+        if (!comments.length) { list.innerHTML = '<div class="loading">Henüz yorum yok.</div>'; return; }
+        list.innerHTML = comments.map(function(c) { return renderComment(c); }).join('');
+    });
+}
+
+function renderComment(c) {
+    var roleBadge = (c.author_role && c.author_role !== 'user') ? '<span class="role-badge-xs" style="background:' + ({owner:'#ffd700',admin:'#fe2c55',moderator:'#20d5ec'}[c.author_role]||'#888') + '">' + ({owner:'Owner',admin:'Admin',moderator:'Mod'}[c.author_role]||'') + '</span>' : '';
+    var pinned = c.is_pinned ? '<span class="comment-pin">📌 Sabitlendi</span>' : '';
+    var pinBtn = c.is_video_owner ? '<button class="comment-action pin-btn" onclick="togglePin(' + c.id + ',this)">' + (c.is_pinned ? '📍' : '📌') + '</button>' : '';
+    var delBtn = (c.is_video_owner || c.is_comment_owner) ? '<button class="comment-action del-btn" onclick="deleteComment(' + c.id + ')">🗑️</button>' : '';
+    var likeBtn = '<button class="comment-action like-comment-btn ' + (c.is_liked ? 'liked' : '') + '" onclick="likeComment(' + c.id + ',this)">' + (c.is_liked ? '❤️' : '🤍') + ' <span>' + c.likes + '</span></button>';
+    var replyBtn = '<button class="comment-action" onclick="startReply(' + c.id + ',\'' + c.author + '\')">💬 Yanıtla</button>';
+    var repliesHtml = '';
+    if (c.replies && c.replies.length) {
+        repliesHtml = '<div class="replies-section">' + c.replies.map(function(r) { return renderReply(r); }).join('') + '</div>';
+    }
+    return '<div class="comment-item' + (c.is_pinned ? ' pinned' : '') + '" id="comment-' + c.id + '">' +
+        '<img src="/uploads/profile_pics/' + c.author_pic + '" alt="" class="comment-avatar">' +
+        '<div class="comment-body">' +
+            '<div class="comment-header">' +
+                '<a href="/profile/' + c.author_username + '" class="comment-author">' + c.author + '</a>' +
+                (c.author_verified ? ' <span class="verified-badge">✓</span>' : '') + roleBadge +
+                pinned +
+            '</div>' +
+            '<p>' + escapeHtml(c.content) + '</p>' +
+            '<div class="comment-actions">' + likeBtn + replyBtn + pinBtn + delBtn + '</div>' +
+            repliesHtml +
+        '</div></div>';
+}
+
+function renderReply(r) {
+    var roleBadge = (r.author_role && r.author_role !== 'user') ? '<span class="role-badge-xs" style="background:' + ({owner:'#ffd700',admin:'#fe2c55',moderator:'#20d5ec'}[r.author_role]||'#888') + '">' + ({owner:'Owner',admin:'Admin',moderator:'Mod'}[r.author_role]||'') + '</span>' : '';
+    var delBtn = (r.is_video_owner || r.is_comment_owner) ? '<button class="comment-action del-btn" onclick="deleteComment(' + r.id + ')">🗑️</button>' : '';
+    var likeBtn = '<button class="comment-action like-comment-btn ' + (r.is_liked ? 'liked' : '') + '" onclick="likeComment(' + r.id + ',this)">' + (r.is_liked ? '❤️' : '🤍') + ' <span>' + r.likes + '</span></button>';
+    return '<div class="reply-item" id="comment-' + r.id + '">' +
+        '<img src="/uploads/profile_pics/' + r.author_pic + '" alt="" class="comment-avatar-sm">' +
+        '<div class="comment-body">' +
+            '<div class="comment-header">' +
+                '<a href="/profile/' + r.author_username + '" class="comment-author">' + r.author + '</a>' +
+                (r.author_verified ? ' <span class="verified-badge">✓</span>' : '') + roleBadge +
+            '</div>' +
+            '<p>' + escapeHtml(r.content) + '</p>' +
+            '<div class="comment-actions">' + likeBtn + delBtn + '</div>' +
+        '</div></div>';
+}
+
+function submitComment() {
+    var input = document.getElementById('commentText');
+    var content = input.value.trim();
+    if (!content || !currentVideoId) return;
+    var body = {content: content};
+    if (replyToId) body.parent_id = replyToId;
+    fetch('/api/video/' + currentVideoId + '/comment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(c) {
+        if (c.error) return;
+        if (replyToId) {
+            var parentEl = document.getElementById('comment-' + replyToId);
+            if (parentEl) {
+                var repliesSection = parentEl.querySelector('.replies-section');
+                if (!repliesSection) {
+                    repliesSection = document.createElement('div');
+                    repliesSection.className = 'replies-section';
+                    parentEl.querySelector('.comment-body').appendChild(repliesSection);
+                }
+                c.is_video_owner = currentCommentsVideoOwner;
+                c.is_comment_owner = true;
+                c.likes = 0;
+                c.is_liked = false;
+                c.replies = [];
+                repliesSection.insertAdjacentHTML('beforeend', renderReply(c));
+            }
+            replyToId = null;
+            document.querySelector('.comment-input .reply-indicator')?.remove();
+        } else {
+            var list = document.getElementById('commentsList');
+            c.is_video_owner = currentCommentsVideoOwner;
+            c.is_comment_owner = true;
+            c.likes = 0;
+            c.is_liked = false;
+            c.replies = [];
+            c.is_pinned = false;
+            list.insertAdjacentHTML('afterbegin', renderComment(c));
+        }
+        input.value = '';
+    });
+}
+
+function startReply(commentId, authorName) {
+    replyToId = commentId;
+    document.getElementById('commentText').focus();
+    var existing = document.querySelector('.reply-indicator');
+    if (!existing) {
+        var div = document.createElement('div');
+        div.className = 'reply-indicator';
+        div.innerHTML = '<span>💬 <strong>' + authorName + '</strong>\'a yanıt veriyorsun</span><button onclick="cancelReply()">✕</button>';
+        document.getElementById('commentText').parentElement.insertBefore(div, document.getElementById('commentText'));
+    } else {
+        existing.querySelector('strong').textContent = authorName;
+    }
+}
+
+function cancelReply() {
+    replyToId = null;
+    var el = document.querySelector('.reply-indicator');
+    if (el) el.remove();
+}
+
+function togglePin(commentId, btn) {
+    fetch('/api/comment/' + commentId + '/pin', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) { location.reload(); });
+}
+
+function likeComment(commentId, btn) {
+    fetch('/api/comment/' + commentId + '/like', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        btn.classList.toggle('liked', d.liked);
+        btn.innerHTML = (d.liked ? '❤️' : '🤍') + ' <span>' + d.count + '</span>';
+    });
+}
+
+function deleteComment(commentId) {
+    if (!confirm('Yorumu silmek istediğinize emin misiniz?')) return;
+    fetch('/api/comment/' + commentId + '/delete', {method:'POST'})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) {
+            var el = document.getElementById('comment-' + commentId);
+            if (el) el.remove();
+        }
+    });
+}
+
+function openReport(contentId, type) { currentVideoId = contentId; currentReportType = type; showModal('reportModal'); }
+
+function submitReport() {
+    var reason = document.getElementById('reportReason').value.trim();
+    if (!reason || !currentVideoId) return;
+    fetch('/report', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content_type:currentReportType, content_id:currentVideoId, reason:reason}) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) { if (d.success) { closeModalById('reportModal'); document.getElementById('reportReason').value = ''; alert('Şikayetiniz gönderildi.'); } });
+}
+
+var storyViewerData = null, storyIndex = 0, storyInterval = null;
+
+function openStoryViewer(userId) {
+    showModal('storyViewer');
+    var content = document.getElementById('storyViewerContent');
+    content.innerHTML = '<div class="loading" style="padding:40px;text-align:center;color:#fff;">Yükleniyor...</div>';
+    storyIndex = 0;
+    fetch('/api/stories')
+    .then(function(r) { return r.json(); })
+    .then(function(users) {
+        var userData = null;
+        for (var i = 0; i < users.length; i++) { if (users[i].user_id === userId) { userData = users[i]; break; } }
+        if (!userData || !userData.stories.length) { content.innerHTML = '<div class="loading" style="padding:40px;text-align:center;color:#fff;">Hikaye bulunamadı.</div>'; return; }
+        storyViewerData = userData;
+        showStory();
+    });
+}
+
+function showStory() {
+    if (!storyViewerData || storyIndex >= storyViewerData.stories.length) { closeModalById('storyViewer'); return; }
+    var s = storyViewerData.stories[storyIndex];
+    var content = document.getElementById('storyViewerContent');
+    var roleBadge = '';
+    if (storyViewerData.role && storyViewerData.role !== 'user') {
+        var bgColor = '#888';
+        var label = '';
+        if (storyViewerData.role === 'owner') { bgColor = '#ffd700'; label = '👑 Owner'; }
+        else if (storyViewerData.role === 'admin') { bgColor = '#fe2c55'; label = '🛡️ Admin'; }
+        else if (storyViewerData.role === 'moderator') { bgColor = '#20d5ec'; label = '⚔️ Mod'; }
+        roleBadge = '<span class="role-badge-xs" style="background:' + bgColor + '">' + label + '</span>';
+    }
+    content.innerHTML =
+        '<div class="story-header">' +
+            '<img src="/uploads/profile_pics/' + storyViewerData.profile_pic + '" class="story-user-pic">' +
+            '<span>' + storyViewerData.nickname + '</span>' + roleBadge +
+        '</div>' +
+        '<img src="/uploads/stories/' + s.file_path + '" class="story-image">' +
+        (s.content ? '<p class="story-text">' + escapeHtml(s.content) + '</p>' : '') +
+        '<div class="story-bottom">' +
+            '<button class="story-nav-btn" id="storyPrevBtn">‹</button>' +
+            '<div class="story-progress-wrap"><div class="story-progress-bar" id="storyProgress"></div></div>' +
+            '<button class="story-nav-btn" id="storyNextBtn">›</button>' +
+        '</div>';
+    document.getElementById('storyPrevBtn').onclick = function(e) { e.stopPropagation(); prevStory(); };
+    document.getElementById('storyNextBtn').onclick = function(e) { e.stopPropagation(); nextStory(); };
+    var bar = document.getElementById('storyProgress');
+    if (bar) {
+        bar.style.width = '0%';
+        var p = 0;
+        if (storyInterval) clearInterval(storyInterval);
+        storyInterval = setInterval(function() { p += 1.5; bar.style.width = p + '%'; if (p >= 100) { clearInterval(storyInterval); storyInterval = null; storyIndex++; showStory(); } }, 100);
+    }
+}
+function nextStory() { if (storyInterval) { clearInterval(storyInterval); storyInterval = null; } if (!storyViewerData || storyIndex >= storyViewerData.stories.length - 1) { closeModalById('storyViewer'); return; } storyIndex++; showStory(); }
+function prevStory() { if (storyInterval) { clearInterval(storyInterval); storyInterval = null; } if (!storyViewerData || storyIndex <= 0) return; storyIndex--; showStory(); }
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModalById(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(e) { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); }
+function escapeHtml(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+</script>
+{% endblock %}

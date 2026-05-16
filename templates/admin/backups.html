@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Admin - Yedekler{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+        <h2>💾 Veritabanı Yedekleri</h2>
+        <form method="POST" action="{{ url_for('create_backup') }}">
+            <button type="submit" class="btn-primary">📀 Yedek Al</button>
+        </form>
+    </div>
+    <p style="color:var(--text2);font-size:0.85rem;margin:8px 0 16px;">Otomatik yedekler her sunucu başlangıcında alınır. Son 20 yedek saklanır.</p>
+
+    {% if backups %}
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead><tr><th>Dosya</th><th>Tarih</th><th>Boyut</th><th>İşlem</th></tr></thead>
+            <tbody>
+                {% for b in backups %}
+                <tr>
+                    <td><code>{{ b.name }}</code></td>
+                    <td>{{ b.name.replace('nobi_backup_','').replace('.db','')[:4] }}-{{ b.name.replace('nobi_backup_','').replace('.db','')[4:6] }}-{{ b.name.replace('nobi_backup_','').replace('.db','')[6:8] }} {{ b.name.replace('nobi_backup_','').replace('.db','')[9:11] }}:{{ b.name.replace('nobi_backup_','').replace('.db','')[11:13] }}</td>
+                    <td>{{ (b.size / 1024)|round(1) }} KB</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('restore_backup', filename=b.name) }}" style="display:inline;" onsubmit="return confirm('Bu yedeği geri yüklemek tüm verileri değiştirir. Emin misiniz?')">
+                            <button type="submit" class="btn-sm" style="border-color:#2ecc71;color:#2ecc71;">Geri Yükle</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('delete_backup', filename=b.name) }}" style="display:inline;" onsubmit="return confirm('Yedeği sil?')">
+                            <button type="submit" class="btn-sm btn-danger">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty-state">Henüz yedek bulunmuyor.</p>
+    {% endif %}
+</div>
+{% endblock %}

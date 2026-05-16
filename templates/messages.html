@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="messages-container">
+    <div class="messages-sidebar">
+        <h3>Conversations</h3>
+        <div class="users-list">
+            {% for user in users %}
+            <div class="user-item" onclick="startConversation({{ user.id }}, '{{ user.nickname }}')">
+                <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=user.profile_pic) }}" alt="" class="msg-avatar">
+                <span>{{ user.nickname }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="conversations-list">
+            {% if conversations %}
+                {% for msg in conversations %}
+                <div class="conv-item" onclick="startConversation({{ msg.sender_id if msg.sender_id != current_user.id else msg.receiver_id }}, '{{ msg.sender.nickname if msg.sender_id != current_user.id else msg.receiver.nickname }}')">
+                    <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=(msg.sender.profile_pic if msg.sender_id != current_user.id else msg.receiver.profile_pic)) }}" alt="" class="msg-avatar">
+                    <div class="conv-info">
+                        <strong>{{ msg.sender.nickname if msg.sender_id != current_user.id else msg.receiver.nickname }}</strong>
+                        <p>{{ msg.content[:30] }}{% if msg.content|length > 30 %}...{% endif %}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="empty-state">No conversations yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="messages-main" id="messageMain">
+        <div class="no-conversation">
+            <h2>Select a conversation</h2>
+            <p>Choose someone from the list to start chatting</p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="newMessageModal" onclick="closeModal(event)">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3>New Message</h3>
+            <button onclick="document.getElementById('newMessageModal').classList.remove('active')">✕</button>
+        </div>
+        <select id="newMessageUser" class="form-input">
+            {% for user in users %}
+            <option value="{{ user.id }}">{{ user.nickname }} (@{{ user.username }})</option>
+            {% endfor %}
+        </select>
+        <textarea id="newMessageContent" class="form-input" placeholder="Type a message..." rows="3"></textarea>
+        <button class="btn-primary" onclick="sendNewMessage()">Send</button>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>var CURRENT_USER_ID = {{ current_user.id }};</script>
+<script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+{% endblock %}

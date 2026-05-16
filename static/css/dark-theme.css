@@ -1,0 +1,7 @@
+/* Light theme overrides for video overlays */
+[data-theme="light"] .video-info-overlay .video-user-row strong,
+[data-theme="light"] .video-info-overlay .video-caption,
+[data-theme="light"] .video-info-overlay .sound-indicator {
+    color: #fff;
+}
+[data-theme="light"] .video-info-overlay .video-user-row a { color: #fff; }

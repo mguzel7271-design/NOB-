@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Admin - Videolar{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <h2>Videolar</h2>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Yükleyen</th>
+                    <th>Başlık</th>
+                    <th>Beğeni</th>
+                    <th>Görüntülenme</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for video in videos %}
+                <tr style="{{ 'background:rgba(254,44,85,0.05);' if not video.approved }}">
+                    <td>{{ video.id }}</td>
+                    <td><a href="{{ url_for('profile', username=video.author.username) }}" class="user-link">{{ video.author.nickname }}</a></td>
+                    <td>
+                        {{ video.title[:40] }}{% if video.title|length > 40 %}...{% endif %}
+                        {% if video.flag_reason %}<br><small style="color:var(--danger);font-size:0.7rem;">🚩 {{ video.flag_reason[:50] }}</small>{% endif %}
+                    </td>
+                    <td>{{ video.likes_count() }}</td>
+                    <td>{{ video.views }}</td>
+                    <td>
+                        {% if not video.approved %}
+                        <span style="color:#f39c12;">⏳ İncelemede</span>
+                        {% elif video.flagged %}
+                        <span style="color:var(--danger);">🚩 Bayraklı</span>
+                        {% else %}
+                        <span style="color:#2ecc71;">✅ Yayında</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not video.approved %}
+                        <button class="btn-sm btn-approve" onclick="approveVideo({{ video.id }})">Onayla</button>
+                        {% endif %}
+                        <button class="btn-sm btn-danger" onclick="deleteVideo({{ video.id }})">Sil</button>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not videos %}
+                <tr><td colspan="7" style="text-align:center;color:var(--text2);padding:30px;">Hiç video yok.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function approveVideo(videoId) {
+    fetch('/admin/approve_video/' + videoId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() { location.reload(); });
+}
+function deleteVideo(videoId) {
+    if (!confirm('Bu videoyu silmek istediğinize emin misiniz?')) return;
+    fetch('/admin/delete_video/' + videoId, { method: 'POST' })
+    .then(function(r) { return r.json(); })
+    .then(function() { location.reload(); });
+}
+</script>
+{% endblock %}

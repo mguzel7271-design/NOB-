@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}Nobi Studio{% endblock %}
+{% block content %}
+<div class="studio-container">
+    <div class="studio-header">
+        <h2>🎬 Nobi Studio</h2>
+        <div class="studio-actions">
+            <button class="btn-secondary" id="selectAllBtn" onclick="toggleSelectAll()">Tümünü Seç</button>
+            <button class="btn-primary" id="deleteSelectedBtn" onclick="deleteSelected()" style="background:var(--danger);display:none;">Seçilenleri Sil</button>
+        </div>
+    </div>
+
+    {% if videos %}
+    <div class="studio-grid" id="studioGrid">
+        {% for video in videos %}
+        <div class="studio-card" data-video-id="{{ video.id }}">
+            <div class="studio-checkbox" onclick="toggleSelect(this)" data-id="{{ video.id }}">
+                <span class="check-box"></span>
+            </div>
+            <video src="{{ url_for('uploaded_file', subdir='videos', filename=video.file_path) }}" muted
+                   onmouseover="var pp=this.play();if(pp)pp.catch(function(){});" onmouseout="this.pause();this.currentTime=0;"
+                   class="studio-thumb"></video>
+            <div class="studio-card-info">
+                <strong class="studio-title">{{ video.title or 'Başlıksız' }}</strong>
+                <small>{{ video.created_at.strftime('%d %B %Y') }}</small>
+                <small>♥ {{ video.likes_count() }} 💬 {{ video.comments_count() }} 👁 {{ video.views }}</small>
+            </div>
+            <button class="studio-edit-btn" onclick="openEdit({{ video.id }})">✎</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:80px 20px;text-align:center;color:var(--text2);">
+        <p style="font-size:2rem;margin-bottom:12px;">🎬</p>
+        <p>Henüz video yüklemediniz.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="modal-overlay" id="editModal" onclick="closeModal(event)">
+    <div class="modal-content modal-sm">
+        <div class="modal-header"><h3>Video Düzenle</h3><button onclick="closeModalById('editModal')">✕</button></div>
+        <form id="editForm" style="padding:16px;">
+            <div class="form-group">
+                <label>Başlık</label>
+                <input type="text" id="editTitle" class="form-input" required maxlength="120">
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <textarea id="editCaption" class="form-input" rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Kapak Fotoğrafı</label>
+                <input type="file" id="editThumb" accept="image/*" class="form-input">
+            </div>
+            <button type="submit" class="btn-primary btn-full">Kaydet</button>
+        </form>
+    </div>
+</div>
+
+<script>
+var editingVideoId = null;
+var selectedIds = new Set();
+
+function toggleSelect(el) {
+    var id = parseInt(el.dataset.id);
+    el.classList.toggle('selected');
+    if (el.classList.contains('selected')) selectedIds.add(id);
+    else selectedIds.delete(id);
+    updateDeleteBtn();
+}
+
+function toggleSelectAll() {
+    var all = document.querySelectorAll('.studio-checkbox');
+    var selectAll = selectedIds.size !== all.length;
+    all.forEach(function(el) {
+        el.classList.toggle('selected', selectAll);
+        var id = parseInt(el.dataset.id);
+        if (selectAll) selectedIds.add(id);
+        else selectedIds.delete(id);
+    });
+    updateDeleteBtn();
+}
+
+function updateDeleteBtn() {
+    var btn = document.getElementById('deleteSelectedBtn');
+    if (selectedIds.size > 0) {
+        btn.style.display = 'inline-block';
+        btn.textContent = 'Sil (' + selectedIds.size + ')';
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+function deleteSelected() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(selectedIds.size + ' video silinecek. Emin misiniz?')) return;
+    fetch('/api/studio/delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({video_ids: Array.from(selectedIds)})
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) { location.reload(); }
+    });
+}
+
+function showModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModalById(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(e) { if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); }
+
+function openEdit(videoId) {
+    editingVideoId = videoId;
+    var card = document.querySelector('[data-video-id="' + videoId + '"]');
+    var title = card ? card.querySelector('.studio-title').textContent : '';
+    document.getElementById('editTitle').value = title === 'Başlıksız' ? '' : title;
+    document.getElementById('editCaption').value = '';
+    document.getElementById('editThumb').value = '';
+    showModal('editModal');
+}
+
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var formData = new FormData();
+    formData.append('title', document.getElementById('editTitle').value);
+    formData.append('caption', document.getElementById('editCaption').value);
+    var thumb = document.getElementById('editThumb').files[0];
+    if (thumb) formData.append('thumbnail', thumb);
+    fetch('/api/studio/update/' + editingVideoId, {
+        method: 'POST',
+        body: formData
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) { closeModalById('editModal'); location.reload(); }
+    });
+});
+</script>
+{% endblock %}

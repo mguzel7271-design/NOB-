@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Admin - Kullanıcılar{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">{% endblock %}
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h2>Kullanıcılar</h2>
+        <div class="admin-filter">
+            <a href="{{ url_for('admin_users') }}" class="filter-link {{ 'active' if status == 'all' else '' }}">Tümü</a>
+            <a href="{{ url_for('admin_users', status='pending') }}" class="filter-link {{ 'active' if status == 'pending' else '' }}">Onay Bekleyen</a>
+            <a href="{{ url_for('admin_users', status='banned') }}" class="filter-link {{ 'active' if status == 'banned' else '' }}">Banlı</a>
+            <a href="{{ url_for('admin_users', status='verified') }}" class="filter-link {{ 'active' if status == 'verified' else '' }}">Doğrulanmış</a>
+        </div>
+    </div>
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Kullanıcı</th>
+                    <th>E-posta</th>
+                    <th>IP</th>
+                    <th>Rol</th>
+                    <th>Onay</th>
+                    <th>Mavi Tik</th>
+                    <th>Ban</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="{{ 'row-banned' if user.is_banned else '' }}">
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <a href="{{ url_for('admin_user_detail', user_id=user.id) }}" class="user-link">
+                            @{{ user.username }}
+                        </a>
+                        <br><small>{{ user.nickname }}</small>
+                    </td>
+                    <td><small>{{ user.email }}</small></td>
+                    <td><small>{{ user.ip_address or '—' }}</small></td>
+                    <td>
+                        {% if user.role != 'user' %}
+                        <span class="role-badge-xs" style="background:{{ user.role_badge }}">{{ user.role_label }}</span>
+                        {% else %}
+                        <span style="color:var(--text3)">Kullanıcı</span>
+                        {% endif %}
+                    </td>
+                    <td class="status-cell">{{ '✅' if user.is_approved else '❌' }}</td>
+                    <td class="status-cell">{{ '✅' if user.verified else '❌' }}</td>
+                    <td class="status-cell">{{ '🚫' if user.is_banned else '—' }}</td>
+                    <td class="actions-cell">
+                        <button class="btn-sm btn-approve" onclick="toggleApprove({{ user.id }})">{{ 'Onayı Kaldır' if user.is_approved else 'Onayla' }}</button>
+                        <button class="btn-sm btn-verify" onclick="toggleVerify({{ user.id }})">{{ 'Tik Kaldır' if user.verified else 'Mavi Tik' }}</button>
+                        {% if current_user.role == 'owner' and user.role != 'owner' and user.role != 'admin' %}
+                        <button class="btn-sm" style="border-color:#ffd700;color:#ffd700;" onclick="setRole({{ user.id }},'admin')">Admin Yap</button>
+                        <button class="btn-sm" style="border-color:#20d5ec;color:#20d5ec;" onclick="setRole({{ user.id }},'moderator')">Mod Yap</button>
+                        {% endif %}
+                        {% if current_user.role == 'owner' and user.role in ('admin','moderator') %}
+                        <button class="btn-sm" onclick="setRole({{ user.id }},'user')">Rolü Kaldır</button>
+                        {% endif %}
+                        {% if not user.is_admin and user.role != 'owner' %}
+                        <button class="btn-sm {{ 'btn-unban' if user.is_banned else 'btn-ban' }}" onclick="toggleBan({{ user.id }}, this)">{{ 'Ban Kaldır' if user.is_banned else 'Banla' }}</button>
+                        <button class="btn-sm btn-kick" onclick="kickUser({{ user.id }})">At</button>
+                        <button class="btn-sm btn-warn" onclick="warnUser({{ user.id }})">Uyar</button>
+                        <button class="btn-sm btn-danger" onclick="deleteUser({{ user.id }})">Sil</button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal-overlay" id="banModal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header"><h3>Banla</h3><button onclick="document.getElementById('banModal').classList.remove('active')">✕</button></div>
+        <textarea id="banReason" class="form-input" placeholder="Ban sebebi..." rows="3" style="margin:12px 0;"></textarea>
+        <select id="banDuration" class="form-input" style="margin-bottom:12px;">
+            <option value="0">Süresiz</option>
+            <option value="1">1 Gün</option>
+            <option value="3">3 Gün</option>
+            <option value="7">1 Hafta</option>
+            <option value="14">2 Hafta</option>
+            <option value="30">1 Ay</option>
+            <option value="60">2 Ay</option>
+            <option value="90">3 Ay</option>
+            <option value="180">6 Ay</option>
+            <option value="365">1 Yıl</option>
+            <option value="730">2 Yıl</option>
+            <option value="1460">4 Yıl</option>
+        </select>
+        <button class="btn-primary btn-full" onclick="confirmBan()">Banla</button>
+    </div>
+</div>
+<div class="modal-overlay" id="warnModal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header"><h3>Uyarı Sebebi</h3><button onclick="document.getElementById('warnModal').classList.remove('active')">✕</button></div>
+        <textarea id="warnReason" class="form-input" placeholder="Uyarı sebebi..." rows="3" style="margin:12px 0;"></textarea>
+        <button class="btn-primary btn-full" onclick="confirmWarn()">Uyarı Gönder</button>
+    </div>
+</div>
+
+<script>
+var banUserId = null, warnUserId = null;
+
+function toggleApprove(userId) { fetch('/admin/approve/' + userId, {method:'POST'}).then(function(r){return r.json()}).then(function(){location.reload()}); }
+function toggleVerify(userId) { fetch('/admin/verify/' + userId, {method:'POST'}).then(function(r){return r.json()}).then(function(){location.reload()}); }
+
+function toggleBan(userId, btn) {
+    var row = btn ? btn.closest('tr') : null;
+    if (row && row.classList.contains('row-banned')) {
+        fetch('/admin/ban/' + userId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason:''})})
+        .then(function(r){return r.json()}).then(function(){location.reload()});
+    } else { banUserId = userId; document.getElementById('banModal').classList.add('active'); }
+}
+function confirmBan() {
+    var reason = document.getElementById('banReason').value.trim() || 'Kurallara uymama';
+    var duration = document.getElementById('banDuration').value;
+    fetch('/admin/ban/' + banUserId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason:reason, duration:duration})})
+    .then(function(r){return r.json()}).then(function(){location.reload()});
+}
+function kickUser(userId) {
+    if (!confirm('Bu kullanıcıyı hesaptan atmak istediğinize emin misiniz?')) return;
+    fetch('/admin/kick/' + userId, {method:'POST'}).then(function(r){return r.json()}).then(function(){location.reload()});
+}
+function warnUser(userId) { warnUserId = userId; document.getElementById('warnModal').classList.add('active'); }
+function confirmWarn() {
+    var reason = document.getElementById('warnReason').value.trim();
+    if (!reason) return;
+    fetch('/admin/warn/' + warnUserId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason:reason})})
+    .then(function(r){return r.json()}).then(function(){location.reload()});
+}
+function setRole(userId, role) {
+    fetch('/admin/set_role/' + userId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({role:role})})
+    .then(function(r){return r.json()}).then(function(){location.reload()});
+}
+function deleteUser(userId) {
+    var reason = prompt('Silme sebebi (topluluk kuralları ihlali):', 'Topluluk kurallarını ihlal');
+    if (!reason) return;
+    if (!confirm('Bu kullanıcıyı ve tüm içeriğini silmek istediğinize emin misiniz?')) return;
+    fetch('/admin/delete_user/' + userId, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({reason:reason})})
+    .then(function(r){return r.json()}).then(function(){location.reload()});
+}
+</script>
+{% endblock %}
