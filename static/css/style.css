@@ -78,7 +78,10 @@ a:hover { opacity: 0.85; }
     transition: transform 0.2s;
     flex-shrink: 0;
     min-width: fit-content;
+    display: flex;
+    align-items: center;
 }
+.nav-logo-img { height: 32px; width: auto; display: block; }
 .nav-logo:active { transform: scale(0.95); }
 
 .nav-search {
@@ -1480,36 +1483,10 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .navbar { position: relative; }
-    .mobile-search-btn { display: none; }
-    .nav-search { display: none; }
-    .nav-logo { font-size: 1.25rem; margin-right: auto; }
-
-    .nav-links { position: static; gap: 0; flex: none; }
-    .nav-links .nav-link:not(.nav-profile):not(.notif-bell) { display: none; }
-
-    .nav-links.active { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: #111; border-bottom: 1px solid #222; z-index: 300; }
-    .nav-links.active .nav-link { display: flex !important; padding: 14px 20px; font-size: 0.95rem; border-bottom: 1px solid #222; color: #fff; }
-    .nav-links.active .nav-profile { display: none; }
-    .nav-links.active .notif-bell { display: none; }
-    .nav-links.active .nav-link:last-child { border-bottom: none; }
-    .nav-links.active .nav-link:active { background: #1a1a1a; }
-
-    .nav-toggle { display: flex !important; color: #fff !important; font-size: 1.5rem; padding: 4px 6px; margin-left: 2px; }
-    .nav-avatar { width: 22px; height: 22px; }
-    .notif-bell { padding: 6px 8px !important; font-size: 1rem; }
-
-    .settings-grid { grid-template-columns: 1fr; }
-    .messages-container { flex-direction: column; height: 100dvh; }
-    .messages-sidebar { width: 100%; max-height: 160px; border-right: none; border-bottom: 1px solid var(--border); overflow-y: auto; }
-    .messages-main { height: calc(100dvh - var(--nav-height) - 160px); }
-    .chat-container { height: calc(100dvh - var(--nav-height)); }
-    .chat-header { flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
-    .chat-messages { flex: 1; padding: 10px 14px; }
-    .chat-input { padding: 8px 14px; }
-    .chat-input input { font-size: 0.85rem; padding: 10px 14px; }
-    .msg { max-width: 90%; font-size: 0.85rem; }
-    .profile-videos { grid-template-columns: repeat(2, 1fr); }
-    .profile-info-section { flex-direction: column; align-items: center; text-align: center; padding-top: 4px; margin-top: 4px !important; gap: 10px; }
+    .main-content { padding-top: 0; }
+    .main-content.profile-page { overflow-y: auto; height: auto; min-height: 100dvh; }
+    .profile-container { height: auto; overflow-y: visible; }
+    .profile-info-section { flex-direction: column; align-items: center; text-align: center; padding: 10px 16px 8px; gap: 8px; }
     .profile-pic-large { width: 72px; height: 72px; }
     .profile-name-row h1 { font-size: 1.1rem; }
     .profile-stats { gap: 16px; font-size: 0.8rem; }
@@ -1525,12 +1502,13 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
     .story-avatar { width: 48px; height: 48px; }
     .story-name { max-width: 48px; }
     .video-card { height: 100dvh; }
-    .video-actions { right: 6px; bottom: 120px; gap: 10px; }
-    .action-icon { width: 34px; height: 34px; font-size: 1rem; }
-    .action-count { font-size: 0.55rem; }
-    .video-info-overlay { padding: 60px 12px 14px; }
-    .video-user-row .comment-avatar { width: 30px; height: 30px; }
-    .video-user-row strong { font-size: 0.82rem; }
+    .video-actions { right: 6px; bottom: 200px; gap: 6px; }
+    .action-icon { width: 30px; height: 30px; font-size: 0.9rem; }
+    .action-count { font-size: 0.5rem; }
+    .video-info-overlay { padding: 80px 12px 20px; width: 100%; box-sizing: border-box; }
+    .video-user-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .video-user-row .comment-avatar { width: 32px; height: 32px; flex-shrink: 0; }
+    .video-user-row strong { font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .video-caption { font-size: 0.75rem; margin-left: 40px; }
     .video-title { font-size: 0.78rem; margin-left: 40px; }
     .sound-indicator { font-size: 0.68rem; margin-left: 40px; }

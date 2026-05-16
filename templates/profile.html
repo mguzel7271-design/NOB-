@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ profile_user.nickname }}{% endblock %}
+{% block main_class %} profile-page{% endblock %}
 {% block content %}
 <div class="profile-container">
-    <div class="profile-info-section" style="margin-top:20px;">
+    <div class="profile-info-section">
         <img src="{{ url_for('uploaded_file', subdir='profile_pics', filename=profile_user.profile_pic) }}" alt="" class="profile-pic-large">
         <div class="profile-details">
             <div class="profile-name-row">

@@ -227,11 +227,8 @@ def check_banned():
 @app.before_request
 def clean_expired_stories():
     try:
-        expired = Story.query.filter(Story.expires_at < datetime.utcnow()).all()
-        for s in expired:
-            try: os.remove(os.path.join(app.config['UPLOAD_FOLDER'], 'stories', s.file_path))
-            except: pass
-            db.session.delete(s)
+        db.session.execute(db.text("DELETE FROM story WHERE expires_at IS NOT NULL AND typeof(expires_at) = 'text'"))
+        db.session.execute(db.text("DELETE FROM story WHERE expires_at < datetime('now')"))
         db.session.commit()
     except:
         db.session.rollback()
@@ -1178,7 +1175,7 @@ if __name__ == '__main__':
     backup_database()
     with app.app_context():
         db.create_all()
-        db.session.execute(db.text("UPDATE story SET expires_at = datetime('now', '+2 days') WHERE expires_at IS NULL OR typeof(expires_at) = 'text'"))
+        db.session.execute(db.text("DELETE FROM story WHERE typeof(expires_at) = 'text'"))
         db.session.commit()
         if not User.query.filter_by(role='owner').first():
             owner = User(email='admin@nobi.com', username='admin', nickname='Admin',
