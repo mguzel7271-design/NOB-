@@ -1480,7 +1480,7 @@ textarea.form-input { resize: vertical; min-height: 70px; font-family: inherit; 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 768px) {
     .navbar { position: relative; }
-    .main-content { padding-top: 0; height: auto; min-height: 100dvh; }
+    .main-content { padding-top: 0; height: auto; min-height: 100dvh; overflow-y: auto; }
     .profile-container { height: auto; min-height: calc(100dvh - 56px); }
     .mobile-search-btn { display: none; }
     .nav-search { display: none; }
